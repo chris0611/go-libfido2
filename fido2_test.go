@@ -36,6 +36,8 @@ func TestDevices(t *testing.T) {
 		require.NoError(t, err)
 		time.Sleep(time.Millisecond * 100)
 
+		t.Logf("Transports: %+v", info.Transports)
+
 		info, err = device.Info()
 		require.NoError(t, err)
 		t.Logf("Info: %+v", info)
