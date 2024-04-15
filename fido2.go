@@ -63,6 +63,8 @@ type DeviceInfo struct {
 	AAGUID     []byte
 	Options    []Option
 	Protocols  []byte
+	Transports []Transport
+	Algorithms []CredentialType
 }
 
 // DeviceType is latest type the device supports.
@@ -137,6 +139,15 @@ func (c CredentialType) String() string {
 		return fmt.Sprintf("COSE(%d)", c)
 	}
 }
+
+type Transport string
+
+const (
+	USB      Transport = "usb"
+	NFC      Transport = "nfc"
+	BLE      Transport = "ble"
+	INTERNAL Transport = "internal"
+)
 
 // Extension ...
 type Extension string
@@ -348,6 +359,8 @@ func (d *Device) Info() (*DeviceInfo, error) {
 	var extensions []string
 	var versions []string
 	var options []Option
+	var algorithms []CredentialType = nil
+	var transports []Transport = nil
 
 	cAAGUIDLen := C.fido_cbor_info_aaguid_len(info)
 	cAAGUIDPtr := C.fido_cbor_info_aaguid_ptr(info)
@@ -390,12 +403,29 @@ func (d *Device) Info() (*DeviceInfo, error) {
 		}
 	}
 
+	cAlgorithmsLen := C.fido_cbor_info_algorithm_count(info)
+	for i := 0; i < int(cAlgorithmsLen); i++ {
+		cAlgorithmType := C.fido_cbor_info_algorithm_cose(info, C.ulong(i))
+		algorithms = append(algorithms, CredentialType(cAlgorithmType))
+	}
+
+	cTransportsLen := C.fido_cbor_info_transports_len(info)
+	cTransportsPtr := C.fido_cbor_info_transports_ptr(info)
+	if cTransportsPtr != nil {
+		cTransports := goStrings(C.int(cTransportsLen), cTransportsPtr)
+		for _, t := range cTransports {
+			transports = append(transports, Transport(t))
+		}
+	}
+
 	return &DeviceInfo{
 		AAGUID:     aaguid,
 		Protocols:  protocols,
 		Versions:   versions,
 		Extensions: extensions,
 		Options:    options,
+		Algorithms: algorithms,
+		Transports: transports,
 	}, nil
 }
 
