@@ -405,7 +405,7 @@ func (d *Device) Info() (*DeviceInfo, error) {
 
 	cAlgorithmsLen := C.fido_cbor_info_algorithm_count(info)
 	for i := 0; i < int(cAlgorithmsLen); i++ {
-		cAlgorithmType := C.fido_cbor_info_algorithm_cose(info, C.uint64_t(i))
+		cAlgorithmType := C.fido_cbor_info_algorithm_cose(info, C.size_t(i))
 		algorithms = append(algorithms, CredentialType(cAlgorithmType))
 	}
 
